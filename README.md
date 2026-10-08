@@ -17,3 +17,29 @@
 
 ### Diagrama
 ![Diagrama del trabajo](imagenes/DIAGRAMA.png)
+
+### Requisitos
+- Terraform instalado
+- Cuenta de AWS
+
+### Configuración del proveedor
+
+Se configurará mediante **profile**.
+
+El perfil utilizado por Terraform se configura en el archivo provider.tf:
+
+```hcl
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+
+provider "aws" {
+  region  = "region"
+  profile = "customprofile"
+}
+```
