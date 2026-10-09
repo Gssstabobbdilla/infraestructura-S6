@@ -9,13 +9,13 @@ locals {
 }
 
 variable "vpc_cidr" {
-  type        = string
-  default     = "10.0.0.0/16"
+  type    = string
+  default = "10.0.0.0/16"
 }
 
 variable "priv_subnet_a_cidr" {
-  type        = string
-  default     = "10.0.11.0/24"
+  type    = string
+  default = "10.0.11.0/24"
 }
 
 variable "priv_subnet_b_cidr" {
