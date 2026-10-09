@@ -3,6 +3,17 @@ output "environment" {
   value       = local.env
 }
 
+output "network_cidrs" {
+  description = "Red seleccionada y subredes calculadas para el workspace activo."
+  value = {
+    vpc       = local.vpc_cidr
+    private_a = local.private_a_cidr
+    private_b = local.private_b_cidr
+    public_a  = local.public_a_cidr
+    public_b  = local.public_b_cidr
+  }
+}
+
 output "api_url" {
   description = "URL base de la API HTTP."
   value       = aws_apigatewayv2_api.http_api.api_endpoint

@@ -30,32 +30,59 @@ El flujo previsto es el siguiente:
 ![Diagrama del trabajo](imagenes/DIAGRAMA.png)
 
 ### Requisitos
-- Terraform instalado
+- Terraform 1.5 o superior instalado
 - Cuenta de AWS
+- AWS CLI v2 y perfil SSO propio para desplegar
 
 ### Manejo de entornos
 
-| Entorno | Workspace | CIDR de la VPC |
-|---|---|---|
-| DEV | `dev` | `10.0.0.0/16` |
-| QA | `qa` | `10.1.0.0/16` |
-| PROD | `prod` | `10.2.0.0/16` |
+| Entorno | Workspace | VPC | Privadas A / B | Publicas A / B |
+|---|---|---|---|---|
+| DEV | `dev` | `10.0.0.0/16` | `10.0.11.0/24` / `10.0.12.0/24` | `10.0.1.0/24` / `10.0.2.0/24` |
+| QA | `qa` | `10.1.0.0/16` | `10.1.11.0/24` / `10.1.12.0/24` | `10.1.1.0/24` / `10.1.2.0/24` |
+| PROD | `prod` | `10.2.0.0/16` | `10.2.11.0/24` / `10.2.12.0/24` | `10.2.1.0/24` / `10.2.2.0/24` |
+
+`iac/environments.tf` selecciona la VPC automaticamente y calcula las subredes.
+No hace falta pasar un archivo de variables por entorno. Los nombres de los
+recursos incluyen el workspace y cada uno conserva un estado independiente.
+La configuracion bloquea desplegar desde `default` u otros nombres de workspace.
 
 ## Configuración de Terraform
 
-Los archivos Terraform se encuentran en el directorio `iac/`. Inicializa Terraform y selecciona o crea el workspace que usarás:
+Los archivos Terraform se encuentran en el directorio `iac/`. Primero construir
+los ZIP de las Lambdas como se indica mas abajo. Luego inicializar Terraform
+y seleccionar o crear el workspace:
 
 ```bash
 cd iac
 terraform init
-terraform workspace select dev
+terraform workspace select -or-create dev
+terraform workspace show
 ```
 
-Si el workspace todavía no existe, créalo con `terraform workspace new dev`. Repite el proceso usando `qa` o `prod` para los otros entornos.
+Repetir usando `qa` o `prod` para los otros entornos. Cambiar de workspace no
+elimina los recursos del anterior ni copia su estado.
+
+El estado es local en este laboratorio y esta excluido de Git. Un workspace
+con el mismo nombre en otra computadora no comparte automaticamente ese estado.
+El integrante que despliega debe conservarlo y encargarse de las operaciones
+posteriores sobre esos recursos, incluida su destruccion.
 
 ### Configuración de proveedores
 
-Se configurará mediante **profile**.
+Cada integrante usa su propio perfil local; no hay un perfil personal fijado en
+el codigo. Configurarlo con `aws configure sso` y autenticarse en el navegador.
+En PowerShell, reemplazar `TU_PERFIL` por el nombre realmente configurado:
+
+```powershell
+$env:AWS_PROFILE = "TU_PERFIL"
+aws sso login --profile $env:AWS_PROFILE
+aws sts get-caller-identity --profile $env:AWS_PROFILE
+```
+
+La region de SSO es la de IAM Identity Center; los recursos de este proyecto
+se despliegan por defecto en `us-east-1`. Pueden ser regiones distintas.
+El nombre de usuario SSO no tiene que coincidir con el nombre del perfil CLI.
 
 #### AWS
 
@@ -63,6 +90,7 @@ El proveedor AWS usa una región y un perfil local de AWS CLI. La configuración
 
 ```hcl
 terraform {
+  required_version = ">= 1.5.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -72,10 +100,48 @@ terraform {
 }
 
 provider "aws" {
-  region  = "region"
-  profile = "customprofile"
+  region  = var.aws_region
+  profile = var.aws_profile
 }
 ```
+
+`aws_profile` tiene valor `null` por defecto, por lo que el proveedor utiliza
+`AWS_PROFILE` o las credenciales estandar disponibles. Tambien puede indicarse
+explicitamente con `-var="aws_profile=TU_PERFIL"`. No guardar credenciales ni
+tokens en el repositorio.
+
+### Desplegar y destruir cada entorno
+
+Desde `iac/`, con el perfil autenticado y los ZIP construidos:
+
+```powershell
+terraform workspace select -or-create dev
+terraform validate
+terraform plan
+terraform apply
+terraform output
+```
+
+Antes de aceptar `apply`, comprobar el workspace activo, la cuenta mostrada por
+`aws sts get-caller-identity` y los cambios del plan. Ejecutar las pruebas de
+carga y recorte documentadas mas abajo y guardar las capturas reales para la
+entrega. Repetir en `qa` y `prod` cuando corresponda.
+
+Para destruir, seleccionar el mismo workspace que se desplego, mantener el
+mismo perfil/cuenta y ejecutar:
+
+```powershell
+terraform workspace select dev
+terraform plan -destroy
+terraform destroy
+terraform state list
+```
+
+Confirmar la destruccion solo despues de revisar el plan. El bucket utiliza
+`force_destroy = true`: tambien se eliminan sus objetos. Tras finalizar, la
+lista de recursos del estado debe estar vacia. Conservar capturas de la
+destruccion. Repetir para cada entorno que se haya desplegado.
+
 ## Recursos configurados
 
 ### Amazon S3

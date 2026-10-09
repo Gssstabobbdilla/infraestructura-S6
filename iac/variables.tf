@@ -10,31 +10,38 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
+variable "aws_profile" {
+  description = "Perfil AWS local. Si es null, utiliza AWS_PROFILE o la cadena de credenciales estandar."
+  type        = string
+  default     = null
+}
+
 locals {
   env = terraform.workspace
 }
 
 variable "vpc_cidr" {
-  type    = string
-  default = "10.0.0.0/16"
+  type        = string
+  description = "CIDR opcional; por defecto se selecciona automaticamente segun el workspace."
+  default     = null
 }
 
 variable "priv_subnet_a_cidr" {
   type    = string
-  default = "10.0.11.0/24"
+  default = null
 }
 
 variable "priv_subnet_b_cidr" {
   type    = string
-  default = "10.0.12.0/24"
+  default = null
 }
 
 variable "public_subnet_a_cidr" {
   type    = string
-  default = "10.0.1.0/24"
+  default = null
 }
 
 variable "public_subnet_b_cidr" {
   type    = string
-  default = "10.0.2.0/24"
+  default = null
 }
