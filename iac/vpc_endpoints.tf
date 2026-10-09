@@ -37,13 +37,11 @@ resource "aws_route_table_association" "private_a" {
   route_table_id = aws_route_table.private.id
 }
 
-# Asociación de la Subred B (Réplica)
+# Asociación de la Subred B
 resource "aws_route_table_association" "private_b" {
   subnet_id = aws_subnet.private_b.id
   route_table_id = aws_route_table.private.id
 }
-
-
 
 
 resource "aws_vpc_endpoint_route_table_association" "s3_main" {
@@ -75,4 +73,16 @@ resource "aws_route_table_association" "public_a" {
 resource "aws_route_table_association" "public_b" {
   subnet_id = aws_subnet.public_b.id
   route_table_id = aws_route_table.public.id
+}
+
+resource "aws_vpc_endpoint" "sqs" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.sqs"
+  vpc_endpoint_type = "Interface"
+
+  subnet_ids          = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+  security_group_ids  = [aws_security_group.sqs_endpoint_sg.id]
+  private_dns_enabled = true
+
+  tags = { Name = "${var.project_name}-${local.env}-sqs-interface" }
 }
