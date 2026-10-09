@@ -111,6 +111,19 @@ La configuración está en [`iac/sns.tf`](iac/sns.tf). Se crea un tópico para r
 - El endpoint de correo es el correo de uno de nosotros, pero se podría usar el correo de cualquier persona, mientras sea una dirección válida.
 - SNS envía un mensaje de confirmación al crear la suscripción. La persona debe confirmarla para empezar a recibir notificaciones.
 
+### IAM
+
+Los roles y políticas están en [`iac/iam.tf`](iac/iam.tf). Cada Lambda tiene su propio rol de ejecución, con permisos limitados a lo que necesita (mínimo privilegio). Ambos roles solo pueden ser asumidos por `lambda.amazonaws.com`.
+
+| Rol | Recurso | Acción | Para qué |
+|---|---|---|---|
+| `upload-role` | S3 `uploads/*` | `s3:PutObject` | Guardar la imagen recibida desde la API |
+| `crop-role` | S3 `uploads/*` | `s3:GetObject` | Descargar la imagen original |
+| `crop-role` | S3 `processed/*` | `s3:PutObject` | Guardar la imagen recortada |
+| `crop-role` | Cola SQS principal | `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `sqs:GetQueueAttributes`, `sqs:ChangeMessageVisibility` | Consumir los mensajes que dispara S3 |
+| Ambos | Log group de su Lambda | `logs:CreateLogStream`, `logs:PutLogEvents` | Escribir logs en CloudWatch |
+| Ambos | `*` | `ec2:CreateNetworkInterface`, `ec2:DescribeNetworkInterfaces`, `ec2:DescribeSubnets`, `ec2:DeleteNetworkInterface`, `ec2:AssignPrivateIpAddresses`, `ec2:UnassignPrivateIpAddresses` | Ejecutarse dentro de la VPC (ENIs) |
+
 
 ## Fuentes de información
 - **S3**
@@ -128,3 +141,7 @@ La configuración está en [`iac/sns.tf`](iac/sns.tf). Se crea un tópico para r
 - **API GATEAY**
 1. [Documentación API GATEWAY en Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/apigatewayv2_api)
 2. [CORS (Cross-Origin Resource Sharing)](https://registry.terraform.io/modules/lee0210/apigateway-cors/aws/latest)
+- **IAM**
+1. [Documentación de aws_iam_role en Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role)
+2. [Documentación de aws_iam_role_policy en Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy)
+3. [Permisos de ejecución de Lambda en una VPC](https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html)
