@@ -1,3 +1,4 @@
+# Log groups
 resource "aws_cloudwatch_log_group" "upload_lambda" {
   name              = "/aws/lambda/${var.project_name}-${local.env}-upload"
   retention_in_days = 14
