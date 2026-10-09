@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "Nombre base"
   type        = string
-  default     = "procesador_imagenes"
+  default     = "image_processor"
 }
 
 locals {
