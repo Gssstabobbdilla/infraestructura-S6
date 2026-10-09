@@ -104,3 +104,7 @@ La configuración de las colas está en [`iac/sqs.tf`](iac/sqs.tf)
 1. [Documentación de SQS con Terraform](https://daringfireball.net/projects/markdown/)
 2. [Políticas en SQS](https://registry.terraform.io/providers/hashicorp/aws/2.34.0/docs/resources/sqs_queue_policy)
 3. [Configuración de colas SQS usando Terraform](https://dev.to/aws-builders/configuring-amazon-sqs-queues-using-terraform-9g2)
+
+- **API GATEAY**
+1. [Documentación API GATEWAY en Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/apigatewayv2_api)
+2. [CORS (Cross-Origin Resource Sharing)](https://registry.terraform.io/modules/lee0210/apigateway-cors/aws/latest)
