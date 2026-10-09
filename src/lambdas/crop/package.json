@@ -1,0 +1,11 @@
+{
+  "name": "lambda-image-transformer",
+  "version": "1.0.1",
+  "description": "Lambda service for circular image cropping",
+  "main": "index.mjs",
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.450.0",
+    "sharp": "0.33.2"
+  }
+}
