@@ -99,21 +99,18 @@ La configuración de las colas está en [`iac/sqs.tf`](iac/sqs.tf)
 
 ### Amazon CloudWatch
 
-La configuración está en [`iac/cloudwatch.tf`](iac/cloudwatch.tf). Se define una alarma sobre la métrica `ApproximateNumberOfMessagesVisible` de la cola de mensajes fallidos (DLQ), dentro del namespace `AWS/SQS`.
+La configuración está en [`iac/cloudwatch.tf`](iac/cloudwatch.tf). Se define una alarma sobre la métrica `ApproximateNumberOfMessagesVisible` de la cola de mensajes fallidos (DLQ).
 
-- La alarma evalúa la métrica en periodos de 60 segundos.
-- Cuando detecta mensajes visibles en la DLQ, envía una acción al tópico SNS configurado para las notificaciones.
-- El archivo actual configura esta alarma; los grupos de logs y los access logs de API Gateway descritos en el diagrama aún no están configurados en Terraform.
-
-> **Nota:** antes de desplegar, revisa que `comparison_operator` use un operador válido de CloudWatch y que la dimensión `QueueName` haga referencia al nombre de la cola DLQ. En el archivo actual esos valores no tienen el formato esperado.
+- La alarma evalua la metrica cada 60s.
+- Cuando se detecta mensajes visibles en la DLQ, envía una acción al tópico SNS configurado para las notificaciones.
 
 ### Amazon SNS
 
 La configuración está en [`iac/sns.tf`](iac/sns.tf). Se crea un tópico para recibir las acciones de la alarma de CloudWatch y una suscripción por correo electrónico.
 
-- El endpoint de correo debe ser una dirección válida a la que tengas acceso.
-- SNS envía un mensaje de confirmación al crear la suscripción. El destinatario debe confirmarla para empezar a recibir notificaciones.
-- El tópico se nombra por entorno usando el workspace activo.
+- El endpoint de correo es el correo de uno de nosotros, pero se podría usar el correo de cualquier persona, mientras sea una dirección válida.
+- SNS envía un mensaje de confirmación al crear la suscripción. La persona debe confirmarla para empezar a recibir notificaciones.
+
 
 ## Fuentes de información
 - **S3**
@@ -122,11 +119,12 @@ La configuración está en [`iac/sns.tf`](iac/sns.tf). Se crea un tópico para r
 1. [Documentación de SQS con Terraform](https://daringfireball.net/projects/markdown/)
 2. [Políticas en SQS](https://registry.terraform.io/providers/hashicorp/aws/2.34.0/docs/resources/sqs_queue_policy)
 3. [Configuración de colas SQS usando Terraform](https://dev.to/aws-builders/configuring-amazon-sqs-queues-using-terraform-9g2)
-
+- **Cloudwatch**
+1. [Documentación de cludwatch](https://registry.terraform.io/modules/terraform-aws-modules/cloudwatch/aws/latest)
+2. [Alarmas n de cludwatch](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm)
+- **SNS**
+1. [Tópicos SNS con Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic)
+2. [Suscripciones SNS con Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_subscription)
 - **API GATEAY**
 1. [Documentación API GATEWAY en Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/apigatewayv2_api)
 2. [CORS (Cross-Origin Resource Sharing)](https://registry.terraform.io/modules/lee0210/apigateway-cors/aws/latest)
-- **CloudWatch y SNS**
-1. [Alarmas de CloudWatch con Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm)
-2. [Tópicos SNS con Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic)
-3. [Suscripciones SNS con Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_subscription)
