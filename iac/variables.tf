@@ -4,6 +4,12 @@ variable "project_name" {
   default     = "image_processor"
 }
 
+variable "aws_region" {
+  description = "Region para el despliegue"
+  type        = string
+  default     = "us-east-1"
+}
+
 locals {
   env = terraform.workspace
 }
