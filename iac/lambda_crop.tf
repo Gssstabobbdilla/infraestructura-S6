@@ -1,7 +1,7 @@
 data "archive_file" "crop_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/../src/lambdas/crop"
-  output_path = "${path.module}/crop_function.zip"
+  source_dir  = "${path.module}/../.build/crop"
+  output_path = "${path.module}/../.build/crop_function.zip"
 }
 
 resource "aws_lambda_function" "crop" {
@@ -27,19 +27,21 @@ resource "aws_lambda_function" "crop" {
   }
 
   depends_on = [
-    aws_iam_role_policy.crop_policy
+    aws_iam_role_policy.crop_policy,
+    aws_cloudwatch_log_group.crop_logs
   ]
 }
 
 # Permiso para SQS invocar a la Lambda
 resource "aws_lambda_event_source_mapping" "sqs_trigger" {
-  event_source_arn        = aws_sqs_queue.main_queue.arn
-  function_name           = aws_lambda_function.crop.arn
-  batch_size              = 5
-  function_response_types = ["ReportBatchItemFailures"]
+  event_source_arn                   = aws_sqs_queue.main_queue.arn
+  function_name                      = aws_lambda_function.crop.arn
+  batch_size                         = 5
+  function_response_types            = ["ReportBatchItemFailures"]
+  maximum_batching_window_in_seconds = 0
 }
 
 resource "aws_cloudwatch_log_group" "crop_logs" {
-  name              = "/aws/lambda/${aws_lambda_function.crop.function_name}"
+  name              = "/aws/lambda/crop-lambda-${local.env}"
   retention_in_days = 14
 }

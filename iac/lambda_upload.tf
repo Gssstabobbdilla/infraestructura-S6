@@ -1,7 +1,7 @@
 data "archive_file" "upload_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/../src/lambdas/upload"
-  output_path = "${path.module}/upload_function.zip"
+  source_dir  = "${path.module}/../.build/upload"
+  output_path = "${path.module}/../.build/upload_function.zip"
 }
 
 resource "aws_lambda_function" "upload" {
@@ -27,7 +27,8 @@ resource "aws_lambda_function" "upload" {
   }
 
   depends_on = [
-    aws_iam_role_policy.upload_policy
+    aws_iam_role_policy.upload_policy,
+    aws_cloudwatch_log_group.upload_logs
   ]
 }
 
@@ -42,6 +43,6 @@ resource "aws_lambda_permission" "apigw_upload" {
 }
 
 resource "aws_cloudwatch_log_group" "upload_logs" {
-  name              = "/aws/lambda/${aws_lambda_function.upload.function_name}"
+  name              = "/aws/lambda/upload-lambda-${local.env}"
   retention_in_days = 14
 }

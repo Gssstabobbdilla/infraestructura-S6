@@ -125,6 +125,49 @@ Los roles y políticas están en [`iac/iam.tf`](iac/iam.tf). Cada Lambda tiene s
 | Ambos | `*` | `ec2:CreateNetworkInterface`, `ec2:DescribeNetworkInterfaces`, `ec2:DescribeSubnets`, `ec2:DeleteNetworkInterface`, `ec2:AssignPrivateIpAddresses`, `ec2:UnassignPrivateIpAddresses` | Ejecutarse dentro de la VPC (ENIs) |
 
 
+### Preparar y probar las Lambdas
+
+Requisitos adicionales: Node.js 22 o superior, npm y Python 3. Desde la raiz del
+repositorio, instalar dependencias locales y ejecutar las pruebas:
+
+```powershell
+npm.cmd ci --prefix src/lambdas/upload
+npm.cmd ci --prefix src/lambdas/crop
+node --test tests/lambdas.test.mjs
+python scripts/package_lambdas.py
+terraform -chdir=iac init
+terraform -chdir=iac validate
+```
+
+El script prepara `.build/upload` y `.build/crop` con dependencias **Linux x64
+glibc**, incluyendo el binario de sharp. Terraform empaqueta esas carpetas con
+`archive_file`. Ejecutar el script nuevamente despues de modificar una Lambda.
+No utilizar los binarios de `node_modules` de Windows para desplegar en Lambda.
+Las pruebas locales simulan S3 y no despliegan recursos en AWS.
+
+Upload acepta multipart con un unico archivo, contenido binario con un MIME de
+imagen o JSON `{"imageBase64":"...","contentType":"image/png"}`. El limite
+es **4 MiB**: los 10 MB del diagrama no caben en una invocacion sincrona de
+Lambda de 6 MB con la expansion de base64. Devuelve HTTP 202 con `uploadKey` y
+`processedKey`. El resultado se genera de forma asincrona y permanece privado.
+
+Cada mensaje fallido devuelve su identificador en `batchItemFailures`, sin
+reintentar los mensajes exitosos del mismo lote. Crop produce PNG de 40x40 con
+recorte circular y transparencia, usando el nombre de resultado de esta version:
+`processed/ID.png`.
+
+Tras desplegar, obtener la URL desde `iac/` y enviar una imagen con PowerShell:
+
+```powershell
+$apiUrl = terraform output -raw api_gateway_url
+curl.exe -X POST "$apiUrl/upload" -F "file=@C:/ruta/foto.png"
+```
+
+Revisar la clave `processedKey` devuelta en el bucket y los logs de las Lambdas.
+La alarma de DLQ compara mensajes visibles con cero y las dos subredes privadas
+tienen una ruta a su propio NAT. S3 utiliza el endpoint Gateway en ambas tablas
+privadas. Los recursos NAT generan cargos cuando estan desplegados.
+
 ## Fuentes de información
 - **S3**
 1. [Documentación de S3 con Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket)
