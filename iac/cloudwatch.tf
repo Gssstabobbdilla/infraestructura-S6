@@ -14,11 +14,6 @@ resource "aws_cloudwatch_log_group" "apigateway" {
   retention_in_days = 14
 }
 
-# Tópico SNS para las notificaciones
-resource "aws_sns_topic" "alerts" {
-  name = "${var.project_name}-${local.env}-alerts"
-}
-
 # Alarma: avisa si llega cualquier mensaje a la DLQ
 resource "aws_cloudwatch_metric_alarm" "dlq_messages" {
   alarm_name          = "${var.project_name}-${local.env}-dlq-messages-alarm"
