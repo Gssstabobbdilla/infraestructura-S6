@@ -97,6 +97,21 @@ La configuración de las colas está en [`iac/sqs.tf`](iac/sqs.tf)
 - **Redrive:** Después de tres recepciones sin completar correctamente el procesamiento, SQS mueve el mensaje a la DLQ.
 - **Cifrado:** Cifrado administrado por SQS.
 
+### Red y salida a Internet
+
+La VPC utiliza dos zonas de disponibilidad. Cada subred privada tiene su propia
+tabla de rutas y una ruta `0.0.0.0/0` hacia el NAT Gateway de la misma zona.
+Los dos NAT Gateways se encuentran en las subredes públicas, cada uno con una
+Elastic IP. Las subredes públicas comparten una tabla de rutas hacia el Internet
+Gateway conectado a la VPC.
+
+El endpoint Gateway de S3 está asociado a ambas tablas privadas y el endpoint
+Interface de SQS tiene una interfaz en cada subred privada. Las llamadas a estos
+servicios utilizan los endpoints; el NAT proporciona salida para otros destinos.
+
+Los NAT Gateways y las Elastic IP generan cargos mientras estén desplegados.
+La configuración de red está en `iac/nat.tf` y `iac/vpc_endpoints.tf`.
+
 ## Fuentes de información
 - **S3**
 1. [Documentación de S3 con Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket)
