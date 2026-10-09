@@ -2,3 +2,8 @@
 .terraform.lock.hcl
 terraform.tfstate.d/
 env/
+node_modules/
+lambdas/.build/
+__pycache__/
+*.tfstate
+*.tfstate.*

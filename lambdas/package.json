@@ -1,0 +1,12 @@
+{
+  "name": "image-processor-lambdas",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "scripts": { "test": "node --test test/*.test.cjs", "build": "python build.py" },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "busboy": "^1.6.0",
+    "sharp": "^0.34.0"
+  }
+}

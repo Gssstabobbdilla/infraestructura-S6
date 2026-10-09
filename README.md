@@ -97,6 +97,56 @@ La configuración de las colas está en [`iac/sqs.tf`](iac/sqs.tf)
 - **Redrive:** Después de tres recepciones sin completar correctamente el procesamiento, SQS mueve el mensaje a la DLQ.
 - **Cifrado:** Cifrado administrado por SQS.
 
+### Lambdas: codigo, pruebas y empaquetado
+
+El codigo esta en `lambdas/upload/index.js` y `lambdas/crop/index.js`.
+Terraform define ambas funciones en `iac/lambda.tf`, con los roles IAM y las
+dos subredes privadas. Upload usa 256 MB y 30 segundos; crop usa 512 MB y
+60 segundos. Los nombres coinciden con los grupos de logs existentes.
+
+Se usa Node.js 22 porque Node.js 20, indicado en el diagrama, ya no esta en
+la lista de runtimes soportados de AWS Lambda. Las dependencias se fijan en
+`lambdas/package-lock.json`.
+
+Requisitos adicionales: Node.js 22 o superior, npm y Python 3. Antes de ejecutar
+`terraform plan` o `terraform apply`, construir los ZIP:
+
+```bash
+cd lambdas
+npm ci
+npm test
+python build.py
+cd ../iac
+terraform validate
+```
+
+En PowerShell puede utilizarse `npm.cmd` si la politica de ejecucion bloquea
+`npm.ps1`. El empaquetador instala dependencias para **Linux x86_64 con glibc**
+en una carpeta independiente y genera `.build/upload.zip` y `.build/crop.zip`.
+No debe subirse `node_modules` de Windows como paquete para Lambda. Los ZIP
+generados y `node_modules` estan excluidos de Git.
+
+Upload acepta un formulario multipart con un unico archivo llamado `image`,
+o JSON con el campo `imageBase64`. Valida que los bytes correspondan a JPG,
+PNG, GIF o WebP y devuelve HTTP 202 con las claves del original y del resultado
+esperado. Un GIF animado se procesa usando su primer fotograma.
+
+**Limite de carga directa: 4 MiB.** El diagrama propone 10 MB, pero Lambda
+limita las invocaciones sincronas a 6 MB y base64 aumenta el tamano del archivo.
+Para admitir originales de 10 MB se necesitaria un flujo de carga directa a S3
+con URL prefirmada. Esta implementacion limita tambien las imagenes a 40 millones
+de pixeles para controlar la memoria utilizada al procesarlas.
+
+Crop interpreta notificaciones S3 dentro de los mensajes SQS, guarda un PNG
+circular de 40x40 con transparencia en `processed/` y devuelve los identificadores
+de mensajes fallidos mediante `batchItemFailures`. Los reintentos utilizan la
+misma clave de salida. El bucket sigue siendo privado: las claves devueltas no
+son enlaces publicos de descarga.
+
+Este avance define las funciones; la ruta de API Gateway y el event source
+mapping de SQS se conectaran en el siguiente avance. Las pruebas locales
+simulan S3 y no sustituyen una prueba desplegada en AWS.
+
 ### Red y salida a Internet
 
 La VPC utiliza dos zonas de disponibilidad. Cada subred privada tiene su propia
