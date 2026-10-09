@@ -4,8 +4,14 @@ output "environment" {
 }
 
 output "api_url" {
-  description = "URL base de la API HTTP; la ruta upload debe ser implementada."
+  description = "URL base de la API HTTP."
   value       = aws_apigatewayv2_api.http_api.api_endpoint
+}
+
+output "upload_url" {
+  description = "Endpoint POST para cargar una imagen de hasta 4 MiB."
+  value       = "${aws_apigatewayv2_api.http_api.api_endpoint}/upload"
+  depends_on  = [aws_apigatewayv2_stage.api_stage]
 }
 
 output "images_bucket_name" {

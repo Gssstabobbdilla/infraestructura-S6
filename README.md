@@ -143,9 +143,43 @@ de mensajes fallidos mediante `batchItemFailures`. Los reintentos utilizan la
 misma clave de salida. El bucket sigue siendo privado: las claves devueltas no
 son enlaces publicos de descarga.
 
-Este avance define las funciones; la ruta de API Gateway y el event source
-mapping de SQS se conectaran en el siguiente avance. Las pruebas locales
-simulan S3 y no sustituyen una prueba desplegada en AWS.
+Las funciones estan conectadas mediante la ruta `POST /upload` de API Gateway
+(integracion proxy con payload 2.0) y un event source mapping de SQS a crop.
+El mapping recibe hasta cinco mensajes y activa `ReportBatchItemFailures`.
+La visibilidad de 360 segundos equivale a seis veces el timeout de crop;
+no se configura una ventana adicional de acumulacion de mensajes.
+
+El stage `$default` registra solicitudes en CloudWatch en formato JSON,
+incluyendo identificador, metodo, ruta, estado y error de integracion. No se
+registra el contenido de las imagenes. El grupo conserva los logs por 14 dias.
+El usuario que despliega necesita permisos para configurar la entrega de logs.
+
+Las pruebas locales simulan S3 y no sustituyen una prueba desplegada en AWS.
+
+### Probar el flujo despues de desplegar
+
+En PowerShell, desde `iac/`, obtener el endpoint y enviar una imagen local:
+
+```powershell
+$uploadUrl = terraform output -raw upload_url
+curl.exe -X POST "$uploadUrl" -F "image=@C:/ruta/foto.png"
+```
+
+La respuesta esperada es HTTP 202 con `uploadKey` y `processedKey`.
+El resultado no aparece inmediatamente porque el procesamiento es asincrono.
+Para comprobarlo, consultar la clave devuelta usando el perfil SSO propio:
+
+```powershell
+$bucketName = terraform output -raw images_bucket_name
+aws s3api head-object --bucket $bucketName --key "processed/ID_circular.png" --profile TU_PERFIL
+aws s3 cp "s3://$bucketName/processed/ID_circular.png" ./resultado.png --profile TU_PERFIL
+```
+
+Reemplazar `ID_circular.png` por la clave exacta devuelta en `processedKey`.
+Si el resultado aun no existe, esperar unos segundos y consultar nuevamente.
+Para diagnosticar un fallo, revisar los logs de API Gateway, upload y crop,
+y comprobar si existen mensajes en la DLQ. El rol del usuario SSO tambien
+necesita permisos de lectura para descargar el resultado.
 
 ### Red y salida a Internet
 
