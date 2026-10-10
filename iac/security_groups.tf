@@ -24,7 +24,7 @@ resource "aws_security_group" "lambda_sg_crop" {
 
 resource "aws_security_group" "sqs_endpoint_sg" {
   name        = "${var.project_name}-${local.env}-sqs-vpce-sg"
-  description = "Permite comunicacion HTTPS hacia el endpoint de SQS"
+  description = "Permite comunicacion HTTPS hacia el endpoint de SQS" 
   vpc_id      = aws_vpc.main.id
   # Regla de entrada
   ingress {
