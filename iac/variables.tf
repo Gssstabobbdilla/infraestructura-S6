@@ -10,6 +10,12 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
+variable "environment" {
+  type        = string
+  default     = "dev"
+  description = "Entorno de despliegue: dev, qa, prod"
+}
+
 locals {
   env = terraform.workspace
 }
